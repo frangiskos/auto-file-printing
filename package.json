@@ -11,6 +11,7 @@
     "author": "",
     "license": "ISC",
     "dependencies": {
-        "@thiagoelg/node-printer": "^0.6.2"
+        "@thiagoelg/node-printer": "^0.6.2",
+        "fs-extra": "^11.1.0"
     }
 }

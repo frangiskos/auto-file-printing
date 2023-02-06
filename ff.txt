@@ -1,5 +1,0 @@
-line 1
-uftl8
-
-437 char set
-line 5
