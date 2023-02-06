@@ -1,0 +1,12 @@
+{
+  "App": {
+    "PathToMonitor": "C:\\DEV\\app\\Kentriki_auto_file_print\\auto-file-printing\\original_files",
+    "FileExtensions": [
+      ".log"
+    ],
+    "PrintingFilePrefix": "printing_",
+    "DeleteAfterPrint": true,
+    "CheckForNewFilesInterval": 1000,
+    "PauseBetweenPrints": 1000
+  }
+}

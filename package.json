@@ -1,17 +1,68 @@
 {
-    "name": "printing",
+    "name": "file-to-printer",
     "version": "1.0.0",
-    "description": "",
+    "description": "Monitors a folder for text files. If found, it sends the file to a printer.",
     "main": "index.js",
     "private": true,
     "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1"
+        "dev": "npx nodemon",
+        "start": "npm run build && start /d .\\dist .\\dist\\File-to-Printer.exe",
+        "build": "npm run build:clean && npm run build:tsc && npm run build:pkg && npm run build:default-settings",
+        "build:clean": "rimraf ./build && rimraf ./dist",
+        "build:tsc": "tsc",
+        "build:assets": "cp .env ./build",
+        "build:pkg": "pkg ./build/main.js -t node16-win-x64 --output ./dist/File-to-Printer",
+        "build:default-settings": "cp ./settings.json ./dist",
+        "lint": "eslint . --ext .ts",
+        "prettier-format": "run-script-os",
+        "prettier-format:win32": "prettier --config .prettierrc \"./src/**/*.ts\" --write",
+        "prettier-format:darwin:linux": "prettier --config .prettierrc 'src/**/*.ts' --write",
+        "prettier-format:default": "prettier --config .prettierrc 'src/**/*.ts' --write",
+        "prettier-watch": "run-script-os",
+        "prettier-watch:win32": "onchange \"src/**/*.ts\" -- prettier --write {{changed}}",
+        "prettier-watch:darwin:linux": "onchange 'src/**/*.ts' -- prettier --write {{changed}}",
+        "prettier-watch:default": "onchange 'src/**/*.ts' -- prettier --write {{changed}}",
+        "test": "jest",
+        "test:dev": "jest --watchAll"
+    },
+    "husky": {
+        "hooks": {
+            "pre-commit": "npm run test && npm run prettier-format && npm run lint"
+        }
     },
     "keywords": [],
     "author": "",
-    "license": "ISC",
+    "license": "unlicense",
     "dependencies": {
         "@thiagoelg/node-printer": "^0.6.2",
-        "fs-extra": "^11.1.0"
+        "app-root-path": "^3.1.0",
+        "chalk": "^4.1.2",
+        "fs-extra": "^11.1.0",
+        "iconv": "^3.0.1",
+        "jest-cucumber": "^3.0.1",
+        "yup": "^0.32.11"
+    },
+    "devDependencies": {
+        "@types/fs-extra": "^11.0.1",
+        "@types/iconv": "^3.0.1",
+        "@types/jest": "^28.1.8",
+        "@types/node": "^18.6.1",
+        "@typescript-eslint/eslint-plugin": "^5.31.0",
+        "@typescript-eslint/parser": "^5.31.0",
+        "eslint": "^8.20.0",
+        "eslint-config-prettier": "^8.5.0",
+        "eslint-plugin-jest": "^26.6.0",
+        "eslint-plugin-prettier": "^4.2.1",
+        "husky": "^8.0.1",
+        "jest": "^28.1.3",
+        "nodemon": "^2.0.19",
+        "onchange": "^7.1.0",
+        "pkg": "^5.8.0",
+        "prettier": "^2.7.1",
+        "rimraf": "^3.0.2",
+        "run-script-os": "^1.1.6",
+        "ts-jest": "^28.0.7",
+        "ts-node": "^10.9.1",
+        "typescript": "^4.7.4"
     }
 }
