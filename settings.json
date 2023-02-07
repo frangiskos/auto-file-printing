@@ -1,10 +1,16 @@
 {
   "App": {
-    "PathToMonitor": "C:\\DEV\\app\\Kentriki_auto_file_print\\auto-file-printing\\original_files",
-    "FileExtensions": [".txt"],
-    "PrintingFilePrefix": "printing_",
-    "DeleteAfterPrint": true,
+    "PrintFolder": "C:\\DEV\\app\\Kentriki_auto_file_print\\auto-file-printing\\original_files",
+    "FileExtensions": [
+      ".txt"
+    ],
+    "PrinterName": "Microsoft Print to PDF",
     "CheckForNewFilesInterval": 1000,
     "PauseBetweenPrints": 1000
+  },
+  "Debug": {
+    "DeleteOriginalAfterPrint": false,
+    "DeleteConvertedAfterPrint": false,
+    "ShowAvailablePrintersOnStartup": true
   }
 }

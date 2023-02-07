@@ -28,27 +28,34 @@ export const config = {
 
 const settingsSchema = object({
   App: object({
-    PathToMonitor: string().required(),
+    PrintFolder: string().required(),
     FileExtensions: array().of(string()).required(),
-    PrintingFilePrefix: string().required().min(1),
-    DeleteAfterPrint: boolean().required(),
+    PrinterName: string().required(),
     CheckForNewFilesInterval: number().required(),
     PauseBetweenPrints: number().required(),
-  }),
+  }).required(),
+  Debug: object({
+    DeleteOriginalAfterPrint: boolean().required(),
+    DeleteConvertedAfterPrint: boolean().required(),
+    ShowAvailablePrintersOnStartup: boolean().required(),
+  }).required(),
 });
 
 export type SettingsValue = InferType<typeof settingsSchema>;
 
 const settingsSample: SettingsValue = {
   App: {
-    // PathToMonitor: 'C:\\Users\\user\\Desktop\\',
-    PathToMonitor:
+    PrintFolder:
       'C:\\DEV\\app\\Kentriki_auto_file_print\\auto-file-printing\\original_files',
     FileExtensions: ['.txt'],
-    PrintingFilePrefix: 'printing_',
-    DeleteAfterPrint: true,
+    PrinterName: 'Microsoft Print to PDF',
     CheckForNewFilesInterval: 1000,
     PauseBetweenPrints: 1000,
+  },
+  Debug: {
+    DeleteOriginalAfterPrint: false,
+    DeleteConvertedAfterPrint: false,
+    ShowAvailablePrintersOnStartup: true,
   },
 };
 
