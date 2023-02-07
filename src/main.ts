@@ -25,7 +25,15 @@ async function main() {
     const iconv = new Iconv('Greek', 'UTF-8');
     const convertedBuffer = iconv.convert(txtBuffer);
 
-    console.log(convertedBuffer.toString());
+    // console.log(convertedBuffer.toString());
+    fs.writeFileSync(
+      path.join(
+        settings.App.PathToMonitor,
+        settings.App.PrintingFilePrefix + file,
+      ),
+      convertedBuffer,
+      { encoding: 'utf8' },
+    );
   }
 }
 
