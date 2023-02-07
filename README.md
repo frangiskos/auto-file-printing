@@ -31,3 +31,7 @@ The extension is configured in settings.json. The following settings are availab
 - "DeleteOriginalAfterPrint": if true, the original file is deleted after printing. If false, they are moved to a ./done subfolder.
 - "DeleteConvertedAfterPrint": if true, the file with the utf8\_ prefix is deleted after printing. If false, they are moved to a ./done subfolder.
 - "ShowAvailablePrintersOnStartup": if true, the list of available printers is shown on startup.
+
+## Converting to UTF8
+
+A list with all available encodings that can be converted to UTF8 is available in the `encodings.json` file.
