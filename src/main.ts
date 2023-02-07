@@ -1,7 +1,7 @@
 import chalk from 'chalk';
 import * as fs from 'fs-extra';
+import { Iconv } from 'iconv';
 import * as path from 'path';
-
 import { log, settings } from './config';
 import {
   checkIfFileExtensionsAreValid,
@@ -82,4 +82,29 @@ async function main() {
   }
 }
 
-main();
+// main();
+
+const testFile = path.join(settings.App.PrintFolder, 'test2.txt'); // CP737
+// const testFile = path.join(settings.App.PrintFolder, 'Greek-test1.txt'); // ISO-8859-7 OR GREEK
+const txtBuffer = fs.readFileSync(testFile);
+
+const supportedEncodings = ['CP737', 'ISO-8859-7'];
+
+for (const encoding of supportedEncodings) {
+  try {
+    const iconv = new Iconv(encoding, 'UTF-8');
+    const convertedBuffer = iconv.convert(txtBuffer);
+    const converted = convertedBuffer.toString('utf8');
+    const convertedLines = converted.split('\r\n');
+    const linesWithName = convertedLines.filter((line) =>
+      line.includes('ΑΝΤΩΝΗΣ ΠΟΛΥΔΩΡΟΥ'),
+    );
+    if (linesWithName.length > 0) {
+      log(chalk.green(encoding), linesWithName[0]);
+    } else {
+      // log(chalk.yellow(encoding));
+    }
+  } catch (error) {
+    // log(chalk.red(encoding));
+  }
+}
