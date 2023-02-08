@@ -7,6 +7,8 @@ import path from 'path';
 import { exit, log, settings } from './config';
 // import { path as RootPath } from 'app-root-path';
 
+export const waitAsync = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 export function checkPathAccess({
   pathToCheck,
   createIfMissing,
@@ -152,6 +154,37 @@ export function convertFilesToUtf8(files: string[]) {
   return filesProcessed;
 }
 
+// export async function printFile({
+//   file,
+//   folder,
+//   printer,
+// }: {
+//   file: string;
+//   folder: string;
+//   printer: string;
+// }): Promise<{ success: boolean }> {
+//   log(chalk.blue(`Printing ${chalk.yellow(file)}`));
+//   return new Promise((resolve, reject) => {
+//     exec(
+//       `print /d:"${printer}" ${path.join(folder, file)}`,
+//       (error, stdout, stderr) => {
+//         if (error) {
+//           log(chalk.red(`Printing ${chalk.yellow(file)} failed`));
+//           resolve({ success: false });
+//         }
+//         if (stderr) {
+//           log(chalk.red(`Printing ${chalk.yellow(file)} failed`));
+//           resolve({ success: false });
+//         }
+//         if (stdout) {
+//           log(chalk.green(`Printing ${chalk.yellow(file)} succeeded`));
+//         }
+//         resolve({ success: true });
+//       },
+//     );
+//   });
+// }
+
 export async function printFile({
   file,
   folder,
@@ -161,10 +194,11 @@ export async function printFile({
   folder: string;
   printer: string;
 }): Promise<Record<'success', boolean>> {
-  const printProcess = spawn('print', [
-    `/d:"${printer}"`,
-    path.join(folder, file),
-  ]);
+  const printProcess = spawn(
+    'print',
+    [`/d:"${printer}"`, path.join(folder, file)],
+    { shell: true },
+  );
 
   printProcess.stdout.on('data', (data) => {
     log(chalk.green(`stdout: ${data}`));
@@ -184,6 +218,92 @@ export async function printFile({
       }
     });
   });
+}
+
+export function doCleanup(
+  file: { original: string; converted: string },
+  printProcess: Awaited<ReturnType<typeof printFile>>,
+) {
+  if (printProcess.success) {
+    log(chalk.green(`Printed file ${chalk.yellow(file.original)}`));
+
+    if (settings.Debug.DeleteOriginalAfterPrint) {
+      fs.removeSync(
+        path.join(settings.App.PrintFolder, 'queue', file.original),
+      );
+    } else {
+      fs.moveSync(
+        path.join(settings.App.PrintFolder, 'queue', file.original),
+        path.join(settings.App.PrintFolder, 'done', file.original),
+      );
+    }
+
+    if (settings.Debug.DeleteConvertedAfterPrint) {
+      fs.removeSync(
+        path.join(settings.App.PrintFolder, 'queue', file.converted),
+      );
+    } else {
+      fs.moveSync(
+        path.join(settings.App.PrintFolder, 'queue', file.converted),
+        path.join(settings.App.PrintFolder, 'done', file.converted),
+      );
+    }
+  } else {
+    log(chalk.red(`Error printing file ${chalk.yellow(file.converted)}`));
+    fs.moveSync(
+      path.join(settings.App.PrintFolder, 'queue', file.converted),
+      path.join(settings.App.PrintFolder, 'queue', 'print_error_' + file),
+    );
+  }
+}
+
+export async function testAllEncodings(
+  testFilePath: string,
+  expected: string,
+  {
+    logUnsupportedEncodings,
+    logNonMatchingEncodings,
+  }: { logUnsupportedEncodings: boolean; logNonMatchingEncodings: boolean } = {
+    logUnsupportedEncodings: false,
+    logNonMatchingEncodings: false,
+  },
+) {
+  // const testFile = path.join(settings.App.PrintFolder, 'test2.txt'); // CP737
+  // const testFile = path.join(settings.App.PrintFolder, 'Greek-test1.txt'); // ISO-8859-7 OR GREEK
+  const txtBuffer = fs.readFileSync(testFilePath);
+
+  const supportedEncodings = fs.readJSONSync(
+    path.join(__dirname, '..', 'encodings.json'), // e.g. ['CP737', 'ISO-8859-7'];
+  );
+  const matchingEncodings = [];
+  for (const encoding of supportedEncodings) {
+    try {
+      const iconv = new Iconv(encoding, 'UTF-8');
+      const convertedBuffer = iconv.convert(txtBuffer);
+      const converted = convertedBuffer.toString('utf8');
+      const convertedLines = converted.split('\r\n');
+      const linesWithName = convertedLines.filter((line) =>
+        line.includes(expected),
+      );
+      if (linesWithName.length > 0) {
+        log(chalk.green(encoding), linesWithName[0]);
+        matchingEncodings.push(encoding);
+      } else {
+        if (logNonMatchingEncodings) {
+          log(chalk.yellow(encoding));
+        }
+      }
+    } catch (error) {
+      if (logUnsupportedEncodings) {
+        log(chalk.red(encoding));
+      }
+    }
+  }
+  if (matchingEncodings.length === 0) {
+    log(chalk.red('No matching encodings found'));
+  } else {
+    log(chalk.green('Matching encodings found:'), matchingEncodings.join(', '));
+  }
 }
 
 // async function runCmdLocal(

@@ -30,6 +30,8 @@ const settingsSchema = object({
   App: object({
     PrintFolder: string().required(),
     FileExtensions: array().of(string()).required(),
+    SourceFileEncoding: string().required(),
+    DestinationFileEncoding: string().required(),
     PrinterName: string().required(),
     CheckForNewFilesInterval: number().required(),
     PauseBetweenPrints: number().required(),
@@ -39,15 +41,21 @@ const settingsSchema = object({
     DeleteConvertedAfterPrint: boolean().required(),
     ShowAvailablePrintersOnStartup: boolean().required(),
   }).required(),
+  FindEncoding: object({
+    RunFindEncodingProcess: boolean().required(),
+    TestFile: string().required(),
+    ExpectedCorrectText: string().required(),
+  }).required(),
 });
 
 export type SettingsValue = InferType<typeof settingsSchema>;
 
 const settingsSample: SettingsValue = {
   App: {
-    PrintFolder:
-      'C:\\DEV\\app\\Kentriki_auto_file_print\\auto-file-printing\\original_files',
+    PrintFolder: 'C:\\dev\\app\\ff\\auto-file-printing\\original_files',
     FileExtensions: ['.txt'],
+    SourceFileEncoding: 'CP737',
+    DestinationFileEncoding: 'utf8',
     PrinterName: 'Microsoft Print to PDF',
     CheckForNewFilesInterval: 1000,
     PauseBetweenPrints: 1000,
@@ -56,6 +64,11 @@ const settingsSample: SettingsValue = {
     DeleteOriginalAfterPrint: false,
     DeleteConvertedAfterPrint: false,
     ShowAvailablePrintersOnStartup: true,
+  },
+  FindEncoding: {
+    RunFindEncodingProcess: true,
+    TestFile: 'C:\\dev\\app\\ff\\auto-file-printing\\original_files\\test.txt',
+    ExpectedCorrectText: 'Ελληνικά',
   },
 };
 
