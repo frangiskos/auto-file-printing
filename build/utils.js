@@ -22,28 +22,19 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.printFile = exports.convertFilesToUtf8 = exports.moveFilesToQueue = exports.getFilesForPrinting = exports.checkIfPrinterIsValid = exports.checkIfFileExtensionsAreValid = exports.checkPathAccess = void 0;
-const node_printer_1 = __importDefault(require("@thiagoelg/node-printer"));
+exports.testAllEncodings = exports.doCleanup = exports.print = exports.convertFilesToUtf8 = exports.moveFilesToQueue = exports.getFilesForPrinting = exports.checkIfPrinterIsValid = exports.checkIfFileExtensionsAreValid = exports.checkPathAccess = exports.waitAsync = void 0;
 const chalk_1 = __importDefault(require("chalk"));
-const child_process_1 = require("child_process");
 const fs = __importStar(require("fs-extra"));
 const iconv_1 = require("iconv");
 const path_1 = __importDefault(require("path"));
 const config_1 = require("./config");
-// import { path as RootPath } from 'app-root-path';
+const spawnUtils_1 = require("./spawnUtils");
+const waitAsync = (ms) => new Promise((r) => setTimeout(r, ms));
+exports.waitAsync = waitAsync;
 function checkPathAccess({ pathToCheck, createIfMissing, }) {
     if (createIfMissing) {
         fs.ensureDirSync(pathToCheck);
@@ -74,13 +65,13 @@ function checkIfFileExtensionsAreValid() {
     }
 }
 exports.checkIfFileExtensionsAreValid = checkIfFileExtensionsAreValid;
-function checkIfPrinterIsValid(showAvailablePrinters) {
-    const printers = node_printer_1.default.getPrinters();
-    const defaultPrinter = node_printer_1.default.getDefaultPrinterName();
+async function checkIfPrinterIsValid(showAvailablePrinters) {
+    const printers = await (0, spawnUtils_1.getPrinterNames)();
+    const defaultPrinter = await (0, spawnUtils_1.getDefaultPrinter)();
     const availablePrinters = printers
         .map((p) => ({
-        name: p.name,
-        default: p.name === defaultPrinter,
+        name: p,
+        default: p === defaultPrinter,
     }))
         .sort((a, b) => (a.default ? -1 : 1));
     if (showAvailablePrinters) {
@@ -100,9 +91,8 @@ function checkIfPrinterIsValid(showAvailablePrinters) {
 }
 exports.checkIfPrinterIsValid = checkIfPrinterIsValid;
 function getFilesForPrinting() {
-    var _a;
     let files = fs.readdirSync(config_1.settings.App.PrintFolder);
-    if (((_a = config_1.settings.App.FileExtensions) === null || _a === void 0 ? void 0 : _a.length) > 0) {
+    if (config_1.settings.App.FileExtensions?.length > 0) {
         files = files.filter((f) => config_1.settings.App.FileExtensions.includes(path_1.default.extname(f).toLowerCase()));
     }
     return files;
@@ -113,8 +103,15 @@ function moveFilesToQueue(files) {
     for (const file of files) {
         // move file to queue folder
         try {
-            fs.moveSync(path_1.default.join(config_1.settings.App.PrintFolder, file), path_1.default.join(config_1.settings.App.PrintFolder, 'queue', file), { overwrite: true });
-            filesMoved.push(file);
+            const timestamp = new Date()
+                .toISOString()
+                .slice(0, -1)
+                .replaceAll('-', '_')
+                .replaceAll(':', '_')
+                .replaceAll('.', '_');
+            const newFileName = timestamp + '_' + file;
+            fs.moveSync(path_1.default.join(config_1.settings.App.PrintFolder, file), path_1.default.join(config_1.settings.App.PrintFolder, 'queue', newFileName), { overwrite: true });
+            filesMoved.push(newFileName);
         }
         catch (error) {
             (0, config_1.log)(chalk_1.default.red(`Error moving file ${file} to queue folder`));
@@ -142,82 +139,76 @@ function convertFilesToUtf8(files) {
     return filesProcessed;
 }
 exports.convertFilesToUtf8 = convertFilesToUtf8;
-function printFile({ file, folder, printer, }) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const printProcess = (0, child_process_1.spawn)('print', [
-            `/d:"${printer}"`,
-            path_1.default.join(folder, file),
-        ]);
-        printProcess.stdout.on('data', (data) => {
-            (0, config_1.log)(chalk_1.default.green(`stdout: ${data}`));
-        });
-        printProcess.stderr.on('data', (data) => {
-            (0, config_1.log)(chalk_1.default.red(`stderr: ${data}`));
-        });
-        return new Promise((resolve, reject) => {
-            printProcess.on('exit', (code) => {
-                if (code === 0) {
-                    resolve({ success: true });
-                }
-                else {
-                    (0, config_1.log)(chalk_1.default.red(`Printing ${chalk_1.default.yellow(file)} failed`));
-                    reject({ success: false });
-                }
-            });
-        });
+async function print({ file, folder, printerName, }) {
+    const printProcess = await (0, spawnUtils_1.printFile)({
+        filePath: path_1.default.join(folder, file),
+        printerName,
     });
+    if (!printProcess.success) {
+        (0, config_1.log)(chalk_1.default.red(`Printing ${chalk_1.default.yellow(file)} failed. Error: ${printProcess.error}`));
+    }
+    return printProcess.success ? { success: true } : { success: false };
 }
-exports.printFile = printFile;
-// async function runCmdLocal(
-//   task: TaskRunCmdLocal,
-//   configList: App['configList'],
-// ) {
-//   const config = configList[task.useConfig];
-//   const commands = Array.isArray(task.cmd) ? task.cmd : [task.cmd];
-//   for (const cmd of commands) {
-//     if (cmd.spawnOptions?.cwd === '$CONFIG_PATH') {
-//       cmd.spawnOptions.cwd = config.path;
-//     }
-//     await runProcess(cmd);
-//   }
-// }
-// export async function runProcess({
-//   command,
-//   args,
-//   spawnOptions,
-//   shellCommands,
-//   message,
-// }: LocalCmd): Promise<void> {
-//   return new Promise(async (resolve, reject) => {
-//     args = args ?? [];
-//     shellCommands = shellCommands ?? [];
-//     shellCommands = Array.isArray(shellCommands)
-//       ? shellCommands
-//       : [shellCommands];
-//     if (message) {
-//       console.log(chalk.blue(message));
-//     }
-//     const cmd = spawn(command, args, spawnOptions);
-//     cmd.on('exit', (exitCode: number) => {
-//       if (exitCode === 0) {
-//         resolve();
-//       } else {
-//         reject(`spawn process exited with code ${exitCode}`);
-//       }
-//     });
-//     if (shellCommands) {
-//       for (const shellCommand of shellCommands) {
-//         if (typeof shellCommand === 'string') {
-//           cmd.stdin.write(`${shellCommand}\n`);
-//         } else {
-//           await new Promise((r) =>
-//             setTimeout(
-//               () => cmd.stdin.write(`${shellCommand.cmd}\n`),
-//               shellCommand.wait,
-//             ),
-//           );
-//         }
-//       }
-//     }
-//   });
-// }
+exports.print = print;
+function doCleanup(file, printProcess) {
+    if (printProcess.success) {
+        (0, config_1.log)(chalk_1.default.green(`Printed file ${chalk_1.default.yellow(file.original)}`));
+        if (config_1.settings.Debug.DeleteOriginalAfterPrint) {
+            fs.removeSync(path_1.default.join(config_1.settings.App.PrintFolder, 'queue', file.original));
+        }
+        else {
+            fs.moveSync(path_1.default.join(config_1.settings.App.PrintFolder, 'queue', file.original), path_1.default.join(config_1.settings.App.PrintFolder, 'done', file.original));
+        }
+        if (config_1.settings.Debug.DeleteConvertedAfterPrint) {
+            fs.removeSync(path_1.default.join(config_1.settings.App.PrintFolder, 'queue', file.converted));
+        }
+        else {
+            fs.moveSync(path_1.default.join(config_1.settings.App.PrintFolder, 'queue', file.converted), path_1.default.join(config_1.settings.App.PrintFolder, 'done', file.converted));
+        }
+    }
+    else {
+        (0, config_1.log)(chalk_1.default.red(`Error printing file ${chalk_1.default.yellow(file.converted)}`));
+        fs.moveSync(path_1.default.join(config_1.settings.App.PrintFolder, 'queue', file.converted), path_1.default.join(config_1.settings.App.PrintFolder, 'queue', 'print_error_' + file));
+    }
+}
+exports.doCleanup = doCleanup;
+async function testAllEncodings(testFilePath, expected, { logUnsupportedEncodings, logNonMatchingEncodings, } = {
+    logUnsupportedEncodings: false,
+    logNonMatchingEncodings: false,
+}) {
+    // const testFile = path.join(settings.App.PrintFolder, 'test2.txt'); // CP737
+    // const testFile = path.join(settings.App.PrintFolder, 'Greek-test1.txt'); // ISO-8859-7 OR GREEK
+    const txtBuffer = fs.readFileSync(testFilePath);
+    const supportedEncodings = fs.readJSONSync(path_1.default.join(__dirname, '..', 'encodings.json'));
+    const matchingEncodings = [];
+    for (const encoding of supportedEncodings) {
+        try {
+            const iconv = new iconv_1.Iconv(encoding, 'UTF-8');
+            const convertedBuffer = iconv.convert(txtBuffer);
+            const converted = convertedBuffer.toString('utf8');
+            const convertedLines = converted.split('\r\n');
+            const linesWithName = convertedLines.filter((line) => line.includes(expected));
+            if (linesWithName.length > 0) {
+                (0, config_1.log)(chalk_1.default.green(encoding), linesWithName[0]);
+                matchingEncodings.push(encoding);
+            }
+            else {
+                if (logNonMatchingEncodings) {
+                    (0, config_1.log)(chalk_1.default.yellow(encoding));
+                }
+            }
+        }
+        catch (error) {
+            if (logUnsupportedEncodings) {
+                (0, config_1.log)(chalk_1.default.red(encoding));
+            }
+        }
+    }
+    if (matchingEncodings.length === 0) {
+        (0, config_1.log)(chalk_1.default.red('No matching encodings found'));
+    }
+    else {
+        (0, config_1.log)(chalk_1.default.green('Matching encodings found:'), matchingEncodings.join(', '));
+    }
+}
+exports.testAllEncodings = testAllEncodings;

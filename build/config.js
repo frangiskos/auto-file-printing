@@ -30,37 +30,48 @@ exports.settings = exports.config = exports.exit = exports.log = void 0;
 const chalk_1 = __importDefault(require("chalk"));
 const fs = __importStar(require("fs-extra"));
 const path = __importStar(require("path"));
-const yup_1 = require("yup");
+const z = __importStar(require("zod"));
 const isPackagedApp = !process.execPath.endsWith('node.exe');
 const basePath = isPackagedApp ? process.cwd() : __dirname;
+// eslint-disable-next-line no-console
 exports.log = console.log;
-const exit = (error) => {
+const exit = async (error) => {
     (0, exports.log)(chalk_1.default.red(error));
-    process.exit(1);
+    const waitAsync = (ms) => new Promise((r) => setTimeout(r, ms));
+    waitAsync(5000).then((_) => process.exit(1));
 };
 exports.exit = exit;
 exports.config = {
     isPackagedApp,
     basePath,
 };
-const settingsSchema = (0, yup_1.object)({
-    App: (0, yup_1.object)({
-        PrintFolder: (0, yup_1.string)().required(),
-        FileExtensions: (0, yup_1.array)().of((0, yup_1.string)()).required(),
-        PrinterName: (0, yup_1.string)().required(),
-        CheckForNewFilesInterval: (0, yup_1.number)().required(),
-        PauseBetweenPrints: (0, yup_1.number)().required(),
-    }).required(),
-    Debug: (0, yup_1.object)({
-        DeleteOriginalAfterPrint: (0, yup_1.boolean)().required(),
-        DeleteConvertedAfterPrint: (0, yup_1.boolean)().required(),
-        ShowAvailablePrintersOnStartup: (0, yup_1.boolean)().required(),
-    }).required(),
+const settingsSchema = z.object({
+    App: z.object({
+        PrintFolder: z.string(),
+        FileExtensions: z.array(z.string()),
+        SourceFileEncoding: z.string(),
+        DestinationFileEncoding: z.string(),
+        PrinterName: z.string(),
+        CheckForNewFilesInterval: z.number(),
+        PauseBetweenPrints: z.number(),
+    }),
+    Debug: z.object({
+        DeleteOriginalAfterPrint: z.boolean(),
+        DeleteConvertedAfterPrint: z.boolean(),
+        ShowAvailablePrintersOnStartup: z.boolean(),
+    }),
+    FindEncoding: z.object({
+        RunFindEncodingProcess: z.boolean(),
+        TestFile: z.string(),
+        ExpectedCorrectText: z.string(),
+    }),
 });
 const settingsSample = {
     App: {
-        PrintFolder: 'C:\\DEV\\app\\Kentriki_auto_file_print\\auto-file-printing\\original_files',
+        PrintFolder: 'C:\\dev\\app\\ff\\auto-file-printing\\original_files',
         FileExtensions: ['.txt'],
+        SourceFileEncoding: 'CP737',
+        DestinationFileEncoding: 'utf8',
         PrinterName: 'Microsoft Print to PDF',
         CheckForNewFilesInterval: 1000,
         PauseBetweenPrints: 1000,
@@ -69,6 +80,11 @@ const settingsSample = {
         DeleteOriginalAfterPrint: false,
         DeleteConvertedAfterPrint: false,
         ShowAvailablePrintersOnStartup: true,
+    },
+    FindEncoding: {
+        RunFindEncodingProcess: true,
+        TestFile: 'C:\\dev\\app\\ff\\auto-file-printing\\original_files\\test.txt',
+        ExpectedCorrectText: 'Ελληνικά',
     },
 };
 const settingsPath = path.join(exports.config.basePath, exports.config.isPackagedApp ? '' : '..', 'settings.json');
@@ -85,17 +101,12 @@ if (!exports.settings) {
     });
     throw 'Invalid settings.json file';
 }
-if (!settingsSchema.isValidSync(exports.settings)) {
+const schemaParsing = settingsSchema.safeParse(exports.settings);
+if (!schemaParsing.success) {
     (0, exports.log)(chalk_1.default.blue('"settings.json" has invalid or missing options. Creating a sample "settings_sample.json" with default settings. \nRename it to "settings.json" and edit it.'));
-    try {
-        settingsSchema.validateSync(exports.settings, { abortEarly: false });
-    }
-    catch (error) {
-        const err = error;
-        err.inner.forEach(({ path, message }) => {
-            (0, exports.log)(chalk_1.default.blue(`Error at ${chalk_1.default.bgRed(path)}: ${chalk_1.default.yellow(message)}`));
-        });
-    }
+    schemaParsing.error.errors.forEach((error) => {
+        (0, exports.log)(chalk_1.default.blue(`Error at ${chalk_1.default.bgRed(error.path.join('.'))}: ${chalk_1.default.yellow(error.message)}`));
+    });
     fs.writeJSONSync(settingsPath.slice(0, -5) + '_sample.json', settingsSample, {
         spaces: 2,
     });

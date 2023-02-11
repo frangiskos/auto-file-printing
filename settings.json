@@ -1,21 +1,21 @@
 {
-  "App": {
-    "PrintFolder": "C:\\dev\\app\\ff\\auto-file-printing\\original_files",
-    "FileExtensions": [".txt"],
-    "SourceFileEncoding": "CP737",
-    "DestinationFileEncoding": "utf8",
-    "PrinterName": "\\\\WSUSSRV01.hio.local\\4th Floor KYOCERA 4501 Multimachine (Cabinet)",
-    "CheckForNewFilesInterval": 1000,
-    "PauseBetweenPrints": 1000
-  },
-  "Debug": {
-    "DeleteOriginalAfterPrint": false,
-    "DeleteConvertedAfterPrint": false,
-    "ShowAvailablePrintersOnStartup": true
-  },
-  "FindEncoding": {
-    "RunFindEncodingProcess": false,
-    "TestFile": "C:\\dev\\app\\ff\\auto-file-printing\\original_files\\test.txt",
-    "ExpectedCorrectText": "Ελληνικά"
-  }
+    "App": {
+        "PrintFolder": "C:\\dev\\app\\ff\\auto-file-printing\\original_files",
+        "FileExtensions": [".txt"],
+        "SourceFileEncoding": "CP737",
+        "DestinationFileEncoding": "utf8",
+        "PrinterName": "\\\\WSUSSRV01.hio.local\\4th Floor KYOCERA 4501 Multimachine (Cabinet)",
+        "CheckForNewFilesInterval": 1000,
+        "PauseBetweenPrints": 1000
+    },
+    "Debug": {
+        "DeleteOriginalAfterPrint": false,
+        "DeleteConvertedAfterPrint": false,
+        "ShowAvailablePrintersOnStartup": false
+    },
+    "FindEncoding": {
+        "RunFindEncodingProcess": false,
+        "TestFile": "C:\\dev\\app\\ff\\auto-file-printing\\original_files\\test.txt",
+        "ExpectedCorrectText": "Ελληνικά"
+    }
 }

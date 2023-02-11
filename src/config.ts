@@ -1,122 +1,127 @@
 import chalk from 'chalk';
 import * as fs from 'fs-extra';
 import * as path from 'path';
-import {
-  array,
-  boolean,
-  InferType,
-  number,
-  object,
-  string,
-  ValidationError,
-} from 'yup';
+import * as z from 'zod';
 
 const isPackagedApp = !process.execPath.endsWith('node.exe');
 const basePath = isPackagedApp ? process.cwd() : __dirname;
 
+// eslint-disable-next-line no-console
 export const log = console.log;
 
-export const exit = (error: string) => {
-  log(chalk.red(error));
-  process.exit(1);
+export const exit = async (error: string) => {
+    log(chalk.red(error));
+    const waitAsync = (ms: number) => new Promise((r) => setTimeout(r, ms));
+    waitAsync(5000).then((_) => process.exit(1));
 };
 
 export const config = {
-  isPackagedApp,
-  basePath,
+    isPackagedApp,
+    basePath,
 };
 
-const settingsSchema = object({
-  App: object({
-    PrintFolder: string().required(),
-    FileExtensions: array().of(string()).required(),
-    SourceFileEncoding: string().required(),
-    DestinationFileEncoding: string().required(),
-    PrinterName: string().required(),
-    CheckForNewFilesInterval: number().required(),
-    PauseBetweenPrints: number().required(),
-  }).required(),
-  Debug: object({
-    DeleteOriginalAfterPrint: boolean().required(),
-    DeleteConvertedAfterPrint: boolean().required(),
-    ShowAvailablePrintersOnStartup: boolean().required(),
-  }).required(),
-  FindEncoding: object({
-    RunFindEncodingProcess: boolean().required(),
-    TestFile: string().required(),
-    ExpectedCorrectText: string().required(),
-  }).required(),
+const settingsSchema = z.object({
+    App: z.object({
+        PrintFolder: z.string(),
+        FileExtensions: z.array(z.string()),
+        SourceFileEncoding: z.string(),
+        DestinationFileEncoding: z.string(),
+        PrinterName: z.string(),
+        CheckForNewFilesInterval: z.number(),
+        PauseBetweenPrints: z.number(),
+    }),
+    Debug: z.object({
+        DeleteOriginalAfterPrint: z.boolean(),
+        DeleteConvertedAfterPrint: z.boolean(),
+        ShowAvailablePrintersOnStartup: z.boolean(),
+    }),
+    FindEncoding: z.object({
+        RunFindEncodingProcess: z.boolean(),
+        TestFile: z.string(),
+        ExpectedCorrectText: z.string(),
+    }),
 });
 
-export type SettingsValue = InferType<typeof settingsSchema>;
+export type SettingsValue = z.infer<typeof settingsSchema>;
 
 const settingsSample: SettingsValue = {
-  App: {
-    PrintFolder: 'C:\\dev\\app\\ff\\auto-file-printing\\original_files',
-    FileExtensions: ['.txt'],
-    SourceFileEncoding: 'CP737',
-    DestinationFileEncoding: 'utf8',
-    PrinterName: 'Microsoft Print to PDF',
-    CheckForNewFilesInterval: 1000,
-    PauseBetweenPrints: 1000,
-  },
-  Debug: {
-    DeleteOriginalAfterPrint: false,
-    DeleteConvertedAfterPrint: false,
-    ShowAvailablePrintersOnStartup: true,
-  },
-  FindEncoding: {
-    RunFindEncodingProcess: true,
-    TestFile: 'C:\\dev\\app\\ff\\auto-file-printing\\original_files\\test.txt',
-    ExpectedCorrectText: 'Ελληνικά',
-  },
+    App: {
+        PrintFolder: 'C:\\dev\\app\\ff\\auto-file-printing\\original_files',
+        FileExtensions: ['.txt'],
+        SourceFileEncoding: 'CP737',
+        DestinationFileEncoding: 'utf8',
+        PrinterName: 'Microsoft Print to PDF',
+        CheckForNewFilesInterval: 1000,
+        PauseBetweenPrints: 1000,
+    },
+    Debug: {
+        DeleteOriginalAfterPrint: false,
+        DeleteConvertedAfterPrint: false,
+        ShowAvailablePrintersOnStartup: true,
+    },
+    FindEncoding: {
+        RunFindEncodingProcess: true,
+        TestFile:
+            'C:\\dev\\app\\ff\\auto-file-printing\\original_files\\test.txt',
+        ExpectedCorrectText: 'Ελληνικά',
+    },
 };
 
 const settingsPath = path.join(
-  config.basePath,
-  config.isPackagedApp ? '' : '..',
-  'settings.json',
+    config.basePath,
+    config.isPackagedApp ? '' : '..',
+    'settings.json',
 );
 
 if (!fs.existsSync(settingsPath)) {
-  fs.writeJSONSync(settingsPath, settingsSample, { spaces: 2 });
+    fs.writeJSONSync(settingsPath, settingsSample, { spaces: 2 });
 }
 
 export const settings: typeof settingsSample = fs.readJSONSync(settingsPath, {
-  throws: false,
+    throws: false,
 });
 
 if (!settings) {
-  log(
-    chalk.blue(
-      '"settings.json" is not a valid JSON file. Creating a sample "settings_sample.json" with default settings. \nRename it to "settings.json" and edit it.',
-    ),
-  );
-  fs.writeJSONSync(settingsPath.slice(0, -5) + '_sample.json', settingsSample, {
-    spaces: 2,
-  });
-  throw 'Invalid settings.json file';
+    log(
+        chalk.blue(
+            '"settings.json" is not a valid JSON file. Creating a sample "settings_sample.json" with default settings. \nRename it to "settings.json" and edit it.',
+        ),
+    );
+    fs.writeJSONSync(
+        settingsPath.slice(0, -5) + '_sample.json',
+        settingsSample,
+        {
+            spaces: 2,
+        },
+    );
+    throw 'Invalid settings.json file';
 }
 
-if (!settingsSchema.isValidSync(settings)) {
-  log(
-    chalk.blue(
-      '"settings.json" has invalid or missing options. Creating a sample "settings_sample.json" with default settings. \nRename it to "settings.json" and edit it.',
-    ),
-  );
-  try {
-    settingsSchema.validateSync(settings, { abortEarly: false });
-  } catch (error) {
-    const err = error as ValidationError;
-    err.inner.forEach(({ path, message }) => {
-      log(
-        chalk.blue(`Error at ${chalk.bgRed(path)}: ${chalk.yellow(message)}`),
-      );
-    });
-  }
+const schemaParsing = settingsSchema.safeParse(settings);
 
-  fs.writeJSONSync(settingsPath.slice(0, -5) + '_sample.json', settingsSample, {
-    spaces: 2,
-  });
-  throw 'Invalid settings.json file';
+if (!schemaParsing.success) {
+    log(
+        chalk.blue(
+            '"settings.json" has invalid or missing options. Creating a sample "settings_sample.json" with default settings. \nRename it to "settings.json" and edit it.',
+        ),
+    );
+
+    schemaParsing.error.errors.forEach((error) => {
+        log(
+            chalk.blue(
+                `Error at ${chalk.bgRed(error.path.join('.'))}: ${chalk.yellow(
+                    error.message,
+                )}`,
+            ),
+        );
+    });
+
+    fs.writeJSONSync(
+        settingsPath.slice(0, -5) + '_sample.json',
+        settingsSample,
+        {
+            spaces: 2,
+        },
+    );
+    throw 'Invalid settings.json file';
 }
