@@ -1,3 +1,6 @@
 {
-  "cSpell.words": ["Evernote", "exceljs"]
+    "search.exclude": {
+        "**/build": true,
+        "**/dist": true
+    }
 }

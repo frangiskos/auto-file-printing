@@ -33,6 +33,9 @@ const iconv_1 = require("iconv");
 const path_1 = __importDefault(require("path"));
 const config_1 = require("./config");
 const spawnUtils_1 = require("./spawnUtils");
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+const encodings_json_1 = __importDefault(require("../encodings.json"));
 const waitAsync = (ms) => new Promise((r) => setTimeout(r, ms));
 exports.waitAsync = waitAsync;
 function checkPathAccess({ pathToCheck, createIfMissing, }) {
@@ -111,7 +114,7 @@ function moveFilesToQueue(files) {
                 .replaceAll('.', '_');
             const newFileName = timestamp + '_' + file;
             fs.moveSync(path_1.default.join(config_1.settings.App.PrintFolder, file), path_1.default.join(config_1.settings.App.PrintFolder, 'queue', newFileName), { overwrite: true });
-            filesMoved.push(newFileName);
+            filesMoved.push({ original: file, inQueue: newFileName });
         }
         catch (error) {
             (0, config_1.log)(chalk_1.default.red(`Error moving file ${file} to queue folder`));
@@ -124,16 +127,35 @@ function convertFilesToUtf8(files) {
     const filesProcessed = [];
     for (const file of files) {
         try {
-            (0, config_1.log)(chalk_1.default.blue(`processing file ${chalk_1.default.yellow(file)}`));
-            const txtBuffer = fs.readFileSync(path_1.default.join(config_1.settings.App.PrintFolder, 'queue', file));
-            const iconv = new iconv_1.Iconv('Greek', 'UTF-8');
+            (0, config_1.log)(chalk_1.default.blue(`processing file ${chalk_1.default.yellow(file.original)}`));
+            const txtBuffer = fs.readFileSync(path_1.default.join(config_1.settings.App.PrintFolder, 'queue', file.inQueue));
+            if (txtBuffer[0] === 0xef &&
+                txtBuffer[1] === 0xbb &&
+                txtBuffer[2] === 0xbf) {
+                (0, config_1.log)(chalk_1.default.blue(`file ${chalk_1.default.yellow(file.original)} is already utf8`));
+                filesProcessed.push({
+                    original: file.original,
+                    inQueue: file.inQueue,
+                    converted: file.inQueue,
+                });
+                continue;
+            }
+            const iconv = new iconv_1.Iconv(config_1.settings.App.SourceFileEncoding, 'UTF-8');
             const convertedBuffer = iconv.convert(txtBuffer);
-            fs.writeFileSync(path_1.default.join(config_1.settings.App.PrintFolder, 'queue', `utf8_` + file), convertedBuffer, { encoding: 'utf8' });
-            filesProcessed.push({ original: file, converted: `utf8_` + file });
+            fs.writeFileSync(path_1.default.join(config_1.settings.App.PrintFolder, 'queue', `utf8_` + file.inQueue), 
+            // convertedBuffer,
+            '\ufeff' + convertedBuffer, // \ufeff is the BOM
+            { encoding: 'utf8' });
+            filesProcessed.push({
+                original: file.original,
+                inQueue: file.inQueue,
+                converted: `utf8_` + file.inQueue,
+            });
         }
         catch (error) {
-            (0, config_1.log)(chalk_1.default.red(`Error processing file ${file}`));
-            fs.moveSync(path_1.default.join(config_1.settings.App.PrintFolder, 'queue', file), path_1.default.join(config_1.settings.App.PrintFolder, 'queue', `convert_error_` + file), { overwrite: true });
+            (0, config_1.log)(chalk_1.default.red(`Error processing file ${file.inQueue}`));
+            (0, config_1.log)(chalk_1.default.red(error));
+            fs.moveSync(path_1.default.join(config_1.settings.App.PrintFolder, 'queue', file.inQueue), path_1.default.join(config_1.settings.App.PrintFolder, 'queue', `convert_error_` + file.inQueue), { overwrite: true });
         }
     }
     return filesProcessed;
@@ -153,22 +175,28 @@ exports.print = print;
 function doCleanup(file, printProcess) {
     if (printProcess.success) {
         (0, config_1.log)(chalk_1.default.green(`Printed file ${chalk_1.default.yellow(file.original)}`));
-        if (config_1.settings.Debug.DeleteOriginalAfterPrint) {
-            fs.removeSync(path_1.default.join(config_1.settings.App.PrintFolder, 'queue', file.original));
+        const fileInQueue = path_1.default.join(config_1.settings.App.PrintFolder, 'queue', file.inQueue);
+        const fileInQueueMoved = path_1.default.join(config_1.settings.App.PrintFolder, 'done', file.inQueue);
+        if (config_1.settings.App.DeleteOriginalAfterPrint &&
+            fs.existsSync(fileInQueue)) {
+            fs.removeSync(fileInQueue);
         }
         else {
-            fs.moveSync(path_1.default.join(config_1.settings.App.PrintFolder, 'queue', file.original), path_1.default.join(config_1.settings.App.PrintFolder, 'done', file.original));
+            fs.moveSync(fileInQueue, fileInQueueMoved);
         }
-        if (config_1.settings.Debug.DeleteConvertedAfterPrint) {
-            fs.removeSync(path_1.default.join(config_1.settings.App.PrintFolder, 'queue', file.converted));
+        const fileConverted = path_1.default.join(config_1.settings.App.PrintFolder, 'queue', file.converted);
+        const fileConvertedMoved = path_1.default.join(config_1.settings.App.PrintFolder, 'done', file.converted);
+        if (config_1.settings.App.DeleteConvertedAfterPrint &&
+            fs.existsSync(fileConverted)) {
+            fs.removeSync(fileConverted);
         }
         else {
-            fs.moveSync(path_1.default.join(config_1.settings.App.PrintFolder, 'queue', file.converted), path_1.default.join(config_1.settings.App.PrintFolder, 'done', file.converted));
+            fs.moveSync(fileConverted, fileConvertedMoved);
         }
     }
     else {
         (0, config_1.log)(chalk_1.default.red(`Error printing file ${chalk_1.default.yellow(file.converted)}`));
-        fs.moveSync(path_1.default.join(config_1.settings.App.PrintFolder, 'queue', file.converted), path_1.default.join(config_1.settings.App.PrintFolder, 'queue', 'print_error_' + file));
+        fs.moveSync(path_1.default.join(config_1.settings.App.PrintFolder, 'queue', file.converted), path_1.default.join(config_1.settings.App.PrintFolder, 'queue', 'print_error_' + file.converted));
     }
 }
 exports.doCleanup = doCleanup;
@@ -179,7 +207,18 @@ async function testAllEncodings(testFilePath, expected, { logUnsupportedEncoding
     // const testFile = path.join(settings.App.PrintFolder, 'test2.txt'); // CP737
     // const testFile = path.join(settings.App.PrintFolder, 'Greek-test1.txt'); // ISO-8859-7 OR GREEK
     const txtBuffer = fs.readFileSync(testFilePath);
-    const supportedEncodings = fs.readJSONSync(path_1.default.join(__dirname, '..', 'encodings.json'));
+    // const encodingsFilePath = config.isPackagedApp
+    //     ? path.join(config.basePath, 'encodings.json')
+    //     : path.join(config.basePath, '..', 'encodings.json'); // e.g. ['CP737', 'ISO-8859-7'];
+    // const supportedEncodings = fs.readJSONSync(encodingsFilePath);
+    // const supportedEncodings = JSON.stringify(
+    //     require('iconv-lite/encodings'),
+    // ).split(',');
+    const supportedEncodings = encodings_json_1.default;
+    // console.log(
+    //     '🚀 ~ file: utils.ts:315 ~ supportedEncodings',
+    //     supportedEncodings,
+    // );
     const matchingEncodings = [];
     for (const encoding of supportedEncodings) {
         try {

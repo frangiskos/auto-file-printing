@@ -1,7 +1,7 @@
 {
     "name": "file-to-printer",
     "version": "1.0.0",
-    "description": "Monitors a folder for text files. If found, it sends the file to a printer.",
+    "description": "Monitors a folder for new text files. When a file is found, it is converted in utf8 format and then printed to a specified printer.",
     "main": "index.js",
     "private": true,
     "scripts": {
@@ -10,7 +10,6 @@
         "build": "npm run build:clean && npm run build:tsc && npm run build:pkg && npm run build:default-settings",
         "build:clean": "rimraf ./build && rimraf ./dist",
         "build:tsc": "tsc",
-        "build:assets": "cp .env ./build",
         "build:pkg": "pkg ./build/main.js -t node16-win-x64 --output ./dist/File-to-Printer",
         "build:default-settings": "cp ./settings.json ./dist",
         "lint": "eslint . --ext .ts",

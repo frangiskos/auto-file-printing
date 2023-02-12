@@ -37,8 +37,7 @@ const basePath = isPackagedApp ? process.cwd() : __dirname;
 exports.log = console.log;
 const exit = async (error) => {
     (0, exports.log)(chalk_1.default.red(error));
-    const waitAsync = (ms) => new Promise((r) => setTimeout(r, ms));
-    waitAsync(5000).then((_) => process.exit(1));
+    process.exit(1);
 };
 exports.exit = exit;
 exports.config = {
@@ -50,14 +49,13 @@ const settingsSchema = z.object({
         PrintFolder: z.string(),
         FileExtensions: z.array(z.string()),
         SourceFileEncoding: z.string(),
-        DestinationFileEncoding: z.string(),
         PrinterName: z.string(),
-        CheckForNewFilesInterval: z.number(),
-        PauseBetweenPrints: z.number(),
-    }),
-    Debug: z.object({
+        ConvertFiles: z.boolean(),
+        PrintFiles: z.boolean(),
         DeleteOriginalAfterPrint: z.boolean(),
         DeleteConvertedAfterPrint: z.boolean(),
+        PauseBetweenChecks: z.number(),
+        PauseBetweenPrints: z.number(),
         ShowAvailablePrintersOnStartup: z.boolean(),
     }),
     FindEncoding: z.object({
@@ -68,23 +66,22 @@ const settingsSchema = z.object({
 });
 const settingsSample = {
     App: {
-        PrintFolder: 'C:\\dev\\app\\ff\\auto-file-printing\\original_files',
+        PrintFolder: 'C:\\dev\\app\\auto-file-printing\\sample_files',
         FileExtensions: ['.txt'],
         SourceFileEncoding: 'CP737',
-        DestinationFileEncoding: 'utf8',
-        PrinterName: 'Microsoft Print to PDF',
-        CheckForNewFilesInterval: 1000,
-        PauseBetweenPrints: 1000,
-    },
-    Debug: {
+        PrinterName: 'Enter printer name here',
+        ConvertFiles: true,
+        PrintFiles: true,
         DeleteOriginalAfterPrint: false,
         DeleteConvertedAfterPrint: false,
-        ShowAvailablePrintersOnStartup: true,
+        PauseBetweenChecks: 1000,
+        PauseBetweenPrints: 2000,
+        ShowAvailablePrintersOnStartup: false,
     },
     FindEncoding: {
-        RunFindEncodingProcess: true,
-        TestFile: 'C:\\dev\\app\\ff\\auto-file-printing\\original_files\\test.txt',
-        ExpectedCorrectText: 'Ελληνικά',
+        RunFindEncodingProcess: false,
+        TestFile: 'C:\\dev\\app\\auto-file-printing\\sample_files\\test.txt',
+        ExpectedCorrectText: 'ΑΒΓΔΕΖ',
     },
 };
 const settingsPath = path.join(exports.config.basePath, exports.config.isPackagedApp ? '' : '..', 'settings.json');

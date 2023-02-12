@@ -22,12 +22,22 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
+const chalk_1 = __importDefault(require("chalk"));
 const path = __importStar(require("path"));
 const config_1 = require("./config");
 const utils_1 = require("./utils");
 async function main() {
     try {
+        // Demo version. Add expiration date after 30 days
+        const demoExpirationDate = new Date('2023-03-31T01:00:00');
+        const currentDate = new Date();
+        if (currentDate.getTime() > demoExpirationDate.getTime()) {
+            (0, config_1.exit)(`Demo version expired. Please contact the developer`);
+        }
         // check if we need to run the encoding test
         if (config_1.settings.FindEncoding.RunFindEncodingProcess) {
             (0, utils_1.testAllEncodings)(config_1.settings.FindEncoding.TestFile, config_1.settings.FindEncoding.ExpectedCorrectText);
@@ -39,44 +49,52 @@ async function main() {
             pathToCheck: path.join(config_1.settings.App.PrintFolder, 'queue'),
             createIfMissing: true,
         });
-        if (!config_1.settings.Debug.DeleteOriginalAfterPrint ||
-            !config_1.settings.Debug.DeleteConvertedAfterPrint) {
+        if (!config_1.settings.App.DeleteOriginalAfterPrint ||
+            !config_1.settings.App.DeleteConvertedAfterPrint) {
             (0, utils_1.checkPathAccess)({
                 pathToCheck: path.join(config_1.settings.App.PrintFolder, 'done'),
                 createIfMissing: true,
             });
         }
         (0, utils_1.checkIfFileExtensionsAreValid)();
-        const printerName = await (0, utils_1.checkIfPrinterIsValid)(config_1.settings.Debug.ShowAvailablePrintersOnStartup);
+        const printerName = await (0, utils_1.checkIfPrinterIsValid)(config_1.settings.App.ShowAvailablePrintersOnStartup);
         // run printing loop
-        const files = (0, utils_1.getFilesForPrinting)();
-        const filesInQueue = (0, utils_1.moveFilesToQueue)(files);
-        const convertedFiles = (0, utils_1.convertFilesToUtf8)(filesInQueue);
-        // print files
-        for (const file of convertedFiles) {
-            const printProcess = await (0, utils_1.print)({
-                file: file.converted,
-                folder: path.join(config_1.settings.App.PrintFolder, 'queue'),
-                printerName: printerName,
-            });
-            (0, utils_1.doCleanup)(file, printProcess);
-            await (0, utils_1.waitAsync)(config_1.settings.App.PauseBetweenPrints);
+        (0, config_1.log)(chalk_1.default.green('Checking for new files...'));
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+            const files = (0, utils_1.getFilesForPrinting)();
+            const filesInQueue = (0, utils_1.moveFilesToQueue)(files);
+            // Convert files to utf8
+            let convertedFiles = [];
+            if (config_1.settings.App.ConvertFiles) {
+                convertedFiles = (0, utils_1.convertFilesToUtf8)(filesInQueue);
+            }
+            else {
+                convertedFiles = filesInQueue.map((file) => ({
+                    original: file.original,
+                    inQueue: file.inQueue,
+                    converted: file.inQueue,
+                }));
+            }
+            // print files
+            for (const file of convertedFiles) {
+                if (!config_1.settings.App.PrintFiles) {
+                    (0, utils_1.doCleanup)(file, { success: true });
+                    continue;
+                }
+                const printProcess = await (0, utils_1.print)({
+                    file: file.converted,
+                    folder: path.join(config_1.settings.App.PrintFolder, 'queue'),
+                    printerName,
+                });
+                (0, utils_1.doCleanup)(file, printProcess);
+                await (0, utils_1.waitAsync)(config_1.settings.App.PauseBetweenPrints);
+            }
+            await (0, utils_1.waitAsync)(config_1.settings.App.PauseBetweenChecks);
         }
-        (0, config_1.exit)('Printing finished');
     }
     catch (error) {
         (0, config_1.exit)(`Unexpected error: ${error}`);
     }
 }
 main();
-// import { getDefaultPrinter, getPrinterNames, printFile } from './spawnUtils';
-// (async function mainTest() {
-//     console.log(await getPrinterNames());
-//     console.log(
-//         await printFile(
-//             'Brother MFC-L3770CDW series Printer',
-//             String.raw`C:\DEV\app\Kentriki_auto_file_print\auto-file-printing\original_files\done\Greek-test1.txt`,
-//         ),
-//     );
-//     console.log(await getDefaultPrinter());
-// })();

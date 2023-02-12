@@ -1,21 +1,20 @@
 {
     "App": {
-        "PrintFolder": "C:\\dev\\app\\ff\\auto-file-printing\\original_files",
+        "PrintFolder": "C:\\DEV\\app\\kentriki-auto-file-printing\\sample_files",
         "FileExtensions": [".txt"],
         "SourceFileEncoding": "CP737",
-        "DestinationFileEncoding": "utf8",
-        "PrinterName": "\\\\WSUSSRV01.hio.local\\4th Floor KYOCERA 4501 Multimachine (Cabinet)",
-        "CheckForNewFilesInterval": 1000,
-        "PauseBetweenPrints": 1000
-    },
-    "Debug": {
+        "PrinterName": "xBrother MFC-L3770CDW series Printer",
+        "ConvertFiles": true,
+        "PrintFiles": true,
         "DeleteOriginalAfterPrint": false,
         "DeleteConvertedAfterPrint": false,
+        "PauseBetweenChecks": 1000,
+        "PauseBetweenPrints": 1000,
         "ShowAvailablePrintersOnStartup": false
     },
     "FindEncoding": {
-        "RunFindEncodingProcess": false,
-        "TestFile": "C:\\dev\\app\\ff\\auto-file-printing\\original_files\\test.txt",
-        "ExpectedCorrectText": "Ελληνικά"
+        "RunFindEncodingProcess": true,
+        "TestFile": "C:\\DEV\\app\\kentriki-auto-file-printing\\sample-files\\test__CP737\\CASH-CHEQ",
+        "ExpectedCorrectText": "ΑΒΓΔΕΖΗΘ"
     }
 }

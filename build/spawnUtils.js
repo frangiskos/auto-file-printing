@@ -34,7 +34,10 @@ async function spawnCmd({ process, args, }) {
 }
 async function execCmd({ process, args, }) {
     return new Promise((resolve) => {
-        (0, child_process_1.execFile)(process, args, { encoding: 'utf8' }, (error, stdout) => {
+        (0, child_process_1.execFile)(process, args, {
+            encoding: 'utf8',
+            windowsHide: true,
+        }, (error, stdout) => {
             if (error) {
                 resolve({ success: false, error });
             }
@@ -109,8 +112,8 @@ async function printFile({ filePath, printerName, }) {
             '-executionpolicy',
             'bypass',
             '-Command',
-            String.raw `Start-Process -FilePath "${filePath}" -Verb print "${printerName}"`,
-            // String.raw`Get-Content -Path ${filePath} | Out-Printer -Name "${printerName}"`,
+            String.raw `Start-Process -FilePath "${filePath}" -Verb print -Wait "${printerName}"`, // This works but it opens a new window.
+            // String.raw`Get-Content -Path "${filePath}" | Out-Printer -Name "${printerName}"`, // This works but the fonts are very small and it doesn't support all file types.
         ],
     });
     return data;
