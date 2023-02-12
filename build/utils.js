@@ -206,6 +206,10 @@ async function testAllEncodings(testFilePath, expected, { logUnsupportedEncoding
 }) {
     // const testFile = path.join(settings.App.PrintFolder, 'test2.txt'); // CP737
     // const testFile = path.join(settings.App.PrintFolder, 'Greek-test1.txt'); // ISO-8859-7 OR GREEK
+    if (!fs.existsSync(testFilePath)) {
+        (0, config_1.exit)(`Test file ${chalk_1.default.blue(testFilePath)} does not exist`);
+        return;
+    }
     const txtBuffer = fs.readFileSync(testFilePath);
     // const encodingsFilePath = config.isPackagedApp
     //     ? path.join(config.basePath, 'encodings.json')

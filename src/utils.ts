@@ -2,12 +2,11 @@ import chalk from 'chalk';
 import * as fs from 'fs-extra';
 import { Iconv } from 'iconv';
 import path from 'path';
-import { config, exit, log, settings } from './config';
+import { exit, log, settings } from './config';
 import { getDefaultPrinter, getPrinterNames, printFile } from './spawnUtils';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import encodingsJson from '../encodings.json';
-
 export const waitAsync = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export function checkPathAccess({
@@ -302,6 +301,11 @@ export async function testAllEncodings(
 ) {
     // const testFile = path.join(settings.App.PrintFolder, 'test2.txt'); // CP737
     // const testFile = path.join(settings.App.PrintFolder, 'Greek-test1.txt'); // ISO-8859-7 OR GREEK
+    if (!fs.existsSync(testFilePath)) {
+        exit(`Test file ${chalk.blue(testFilePath)} does not exist`);
+        return;
+    }
+
     const txtBuffer = fs.readFileSync(testFilePath);
 
     // const encodingsFilePath = config.isPackagedApp
