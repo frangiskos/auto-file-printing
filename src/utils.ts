@@ -327,12 +327,19 @@ export async function testAllEncodings(
             const convertedBuffer = iconv.convert(txtBuffer);
             const converted = convertedBuffer.toString('utf8');
             const convertedLines = converted.split('\r\n');
-            const linesWithName = convertedLines.filter((line) =>
+            const linesWithName = convertedLines.filter((line: string) =>
                 line.includes(expected),
             );
             if (linesWithName.length > 0) {
                 log(chalk.green(encoding), linesWithName[0]);
                 matchingEncodings.push(encoding);
+
+                const convertedFilename =
+                    testFilePath.slice(0, testFilePath.lastIndexOf('.')) +
+                    '_' +
+                    encoding +
+                    testFilePath.slice(testFilePath.lastIndexOf('.'));
+                fs.writeFileSync(convertedFilename, converted);
             } else {
                 if (logNonMatchingEncodings) {
                     log(chalk.yellow(encoding));

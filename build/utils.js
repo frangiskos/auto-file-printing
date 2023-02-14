@@ -234,6 +234,11 @@ async function testAllEncodings(testFilePath, expected, { logUnsupportedEncoding
             if (linesWithName.length > 0) {
                 (0, config_1.log)(chalk_1.default.green(encoding), linesWithName[0]);
                 matchingEncodings.push(encoding);
+                const convertedFilename = testFilePath.slice(0, testFilePath.lastIndexOf('.')) +
+                    '_' +
+                    encoding +
+                    testFilePath.slice(testFilePath.lastIndexOf('.'));
+                fs.writeFileSync(convertedFilename, converted);
             }
             else {
                 if (logNonMatchingEncodings) {
