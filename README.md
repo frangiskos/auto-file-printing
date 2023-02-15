@@ -22,6 +22,8 @@ The extension is configured in settings.json. The following settings are availab
 
 -   "PrintFolder": the path of the folder to monitor. Note that the character "\" must be escaped with another "\". For example, "C:\\Users\\myuser\\Desktop\\printfolder" is a valid path.
 -   "FileExtensions": the file extensions to monitor. Example: [".txt"]. Leave blank to monitor for all files. Note that only text files are supported.
+-   "PrintCommand": The files are printed by executing a shell command. For example, 'powershell.exe' ...Args. The ags are provided in the PrintCommandArgs setting.
+-   "PrintCommandArgs": an array of arguments to pass to the print command. For example, ["-c", "Get-Content -Raw -Encoding Byte -Path %FILE_PATH% | Out-Printer -PrinterName %PRINTER_NAME%"]. The command must have two placeholders: %FILE_PATH% for the file path and %PRINTER_NAME% for the printer name.
 -   "PrinterName": the name of the printer to use. If not set, the default printer is used. If an invalid printer name is set, the app will show a list of all available printers and exit.
 -   "ConvertFiles": if true, the files are converted to UTF8 before printing. If false, the files are printed as they are.
 -   "PrintFiles": if true, the files are printed. If false, the files are only converted to UTF8.

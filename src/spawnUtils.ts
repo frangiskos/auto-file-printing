@@ -1,6 +1,6 @@
 import chalk from 'chalk';
 import { execFile, spawn } from 'child_process';
-import { log } from './config';
+import { log, settings } from './config';
 import { CmdResponse } from './types';
 
 async function spawnCmd({
@@ -142,15 +142,12 @@ export async function printFile({
     printerName: string;
 }) {
     const data = await execCmd({
-        process: 'powershell.exe',
-        args: [
-            '-noprofile',
-            '-executionpolicy',
-            'bypass',
-            '-Command',
-            String.raw`Start-Process -FilePath "${filePath}" -Verb print -Wait "${printerName}"`, // This works but it opens a new window.
-            // String.raw`Get-Content -Path "${filePath}" | Out-Printer -Name "${printerName}"`, // This works but the fonts are very small and it doesn't support all file types.
-        ],
+        process: settings.App.PrintCommand,
+        args: settings.App.PrintCommandArgs.map((arg) =>
+            arg
+                .replace('%FILE_PATH%', filePath)
+                .replace('%PRINTER_NAME%', printerName),
+        ),
     });
 
     return data;

@@ -50,6 +50,8 @@ const settingsSchema = z.object({
         FileExtensions: z.array(z.string()),
         SourceFileEncoding: z.string(),
         PrinterName: z.string(),
+        PrintCommand: z.string(),
+        PrintCommandArgs: z.array(z.string()),
         ConvertFiles: z.boolean(),
         PrintFiles: z.boolean(),
         DeleteOriginalAfterPrint: z.boolean(),
@@ -69,6 +71,15 @@ const settingsSample = {
         PrintFolder: 'C:\\dev\\app\\auto-file-printing\\sample_files',
         FileExtensions: ['.txt'],
         SourceFileEncoding: 'CP737',
+        PrintCommand: 'powershell.exe',
+        PrintCommandArgs: [
+            '-noprofile',
+            '-executionpolicy',
+            'bypass',
+            '-Command',
+            'Start-Process -NoNewWindow -FilePath "%FILE_PATH%" -Verb print -Wait "%PRINTER_NAME%"', // This works but it opens a new window & -NoNewWindow sometimes causes problems.
+            // `Start-Process -FilePath "${filePath}" -Verb print -Wait "${printerName}"` //  This works but the fonts are very small and it doesn't support all file types.
+        ],
         PrinterName: 'Enter printer name here',
         ConvertFiles: true,
         PrintFiles: true,

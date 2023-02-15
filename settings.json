@@ -1,9 +1,17 @@
 {
     "App": {
-        "PrintFolder": "C:\\DEV\\app\\kentriki-auto-file-printing\\sample_files",
+        "PrintFolder": "C:\\DEV\\app\\Kentriki_auto_file_print\\auto-file-printing\\sample-files",
         "FileExtensions": [".txt"],
         "SourceFileEncoding": "CP737",
-        "PrinterName": "xBrother MFC-L3770CDW series Printer",
+        "PrintCommand": "powershell.exe",
+        "PrintCommandArgs": [
+            "-noprofile",
+            "-executionpolicy",
+            "bypass",
+            "-Command",
+            "Start-Process -FilePath \"%FILE_PATH%\" -Verb print -Wait \"%PRINTER_NAME%\""
+        ],
+        "PrinterName": "Brother MFC-L3770CDW series Printer",
         "ConvertFiles": true,
         "PrintFiles": true,
         "DeleteOriginalAfterPrint": false,
@@ -13,7 +21,7 @@
         "ShowAvailablePrintersOnStartup": false
     },
     "FindEncoding": {
-        "RunFindEncodingProcess": true,
+        "RunFindEncodingProcess": false,
         "TestFile": "C:\\DEV\\app\\kentriki-auto-file-printing\\sample-files\\test__CP737\\CASH-CHEQ",
         "ExpectedCorrectText": "ΑΒΓΔΕΖΗΘ"
     }

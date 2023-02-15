@@ -106,15 +106,10 @@ async function getDefaultPrinter() {
 exports.getDefaultPrinter = getDefaultPrinter;
 async function printFile({ filePath, printerName, }) {
     const data = await execCmd({
-        process: 'powershell.exe',
-        args: [
-            '-noprofile',
-            '-executionpolicy',
-            'bypass',
-            '-Command',
-            String.raw `Start-Process -FilePath "${filePath}" -Verb print -Wait "${printerName}"`, // This works but it opens a new window.
-            // String.raw`Get-Content -Path "${filePath}" | Out-Printer -Name "${printerName}"`, // This works but the fonts are very small and it doesn't support all file types.
-        ],
+        process: config_1.settings.App.PrintCommand,
+        args: config_1.settings.App.PrintCommandArgs.map((arg) => arg
+            .replace('%FILE_PATH%', filePath)
+            .replace('%PRINTER_NAME%', printerName)),
     });
     return data;
 }
