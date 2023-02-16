@@ -177,21 +177,17 @@ function doCleanup(file, printProcess) {
         (0, config_1.log)(chalk_1.default.green(`Printed file ${chalk_1.default.yellow(file.original)}`));
         const fileInQueue = path_1.default.join(config_1.settings.App.PrintFolder, 'queue', file.inQueue);
         const fileInQueueMoved = path_1.default.join(config_1.settings.App.PrintFolder, 'done', file.inQueue);
-        if (config_1.settings.App.DeleteOriginalAfterPrint &&
-            fs.existsSync(fileInQueue)) {
-            fs.removeSync(fileInQueue);
-        }
-        else {
-            fs.moveSync(fileInQueue, fileInQueueMoved);
+        if (fs.existsSync(fileInQueue)) {
+            config_1.settings.App.DeleteOriginalAfterPrint
+                ? fs.removeSync(fileInQueue)
+                : fs.moveSync(fileInQueue, fileInQueueMoved);
         }
         const fileConverted = path_1.default.join(config_1.settings.App.PrintFolder, 'queue', file.converted);
         const fileConvertedMoved = path_1.default.join(config_1.settings.App.PrintFolder, 'done', file.converted);
-        if (config_1.settings.App.DeleteConvertedAfterPrint &&
-            fs.existsSync(fileConverted)) {
-            fs.removeSync(fileConverted);
-        }
-        else {
-            fs.moveSync(fileConverted, fileConvertedMoved);
+        if (fs.existsSync(fileConverted)) {
+            config_1.settings.App.DeleteConvertedAfterPrint
+                ? fs.removeSync(fileConverted)
+                : fs.moveSync(fileConverted, fileConvertedMoved);
         }
     }
     else {

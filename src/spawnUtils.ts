@@ -147,7 +147,9 @@ export async function printFile({
             arg
                 .replace('%FILE_PATH%', filePath)
                 .replace('%PRINTER_NAME%', printerName),
-        ),
+        )
+            .map((arg) => String.raw`${arg.trim()}`)
+            .filter((arg) => arg.length > 0),
     });
 
     return data;

@@ -9,7 +9,7 @@
             "-executionpolicy",
             "bypass",
             "-Command",
-            "Start-Process -FilePath \"%FILE_PATH%\" -Verb print -Wait \"%PRINTER_NAME%\""
+            "Start-Process -WindowStyle Minimized -FilePath \"'\"%FILE_PATH%\"'\" -Verb print -Wait \"'\"%PRINTER_NAME%\"'\""
         ],
         "PrinterName": "Brother MFC-L3770CDW series Printer",
         "ConvertFiles": true,

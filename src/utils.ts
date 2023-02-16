@@ -245,13 +245,11 @@ export function doCleanup(
             'done',
             file.inQueue,
         );
-        if (
-            settings.App.DeleteOriginalAfterPrint &&
-            fs.existsSync(fileInQueue)
-        ) {
-            fs.removeSync(fileInQueue);
-        } else {
-            fs.moveSync(fileInQueue, fileInQueueMoved);
+
+        if (fs.existsSync(fileInQueue)) {
+            settings.App.DeleteOriginalAfterPrint
+                ? fs.removeSync(fileInQueue)
+                : fs.moveSync(fileInQueue, fileInQueueMoved);
         }
 
         const fileConverted = path.join(
@@ -264,13 +262,10 @@ export function doCleanup(
             'done',
             file.converted,
         );
-        if (
-            settings.App.DeleteConvertedAfterPrint &&
-            fs.existsSync(fileConverted)
-        ) {
-            fs.removeSync(fileConverted);
-        } else {
-            fs.moveSync(fileConverted, fileConvertedMoved);
+        if (fs.existsSync(fileConverted)) {
+            settings.App.DeleteConvertedAfterPrint
+                ? fs.removeSync(fileConverted)
+                : fs.moveSync(fileConverted, fileConvertedMoved);
         }
     } else {
         log(chalk.red(`Error printing file ${chalk.yellow(file.converted)}`));

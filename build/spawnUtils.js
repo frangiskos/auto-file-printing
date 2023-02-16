@@ -109,7 +109,9 @@ async function printFile({ filePath, printerName, }) {
         process: config_1.settings.App.PrintCommand,
         args: config_1.settings.App.PrintCommandArgs.map((arg) => arg
             .replace('%FILE_PATH%', filePath)
-            .replace('%PRINTER_NAME%', printerName)),
+            .replace('%PRINTER_NAME%', printerName))
+            .map((arg) => String.raw `${arg.trim()}`)
+            .filter((arg) => arg.length > 0),
     });
     return data;
 }
