@@ -18,11 +18,14 @@
         "DeleteConvertedAfterPrint": false,
         "PauseBetweenChecks": 1000,
         "PauseBetweenPrints": 1000,
-        "ShowAvailablePrintersOnStartup": false
+        "ShowAvailablePrintersOnStartup": false,
+        "RemoveEndingSpaces": true,
+        "RemoveEndingNewLines": true,
+        "RemoveEscapeCharacters": true
     },
     "FindEncoding": {
-        "RunFindEncodingProcess": false,
-        "TestFile": "C:\\DEV\\app\\kentriki-auto-file-printing\\sample-files\\test__CP737\\CASH-CHEQ",
-        "ExpectedCorrectText": "ΑΒΓΔΕΖΗΘ"
+        "RunFindEncodingProcess": true,
+        "TestFile": "C:\\dev\\app\\ff\\auto-file-printing\\sample-files\\test__CP737\\test2.txt",
+        "ExpectedCorrectText": "ΑΝΤΩΝΗΣ"
     }
 }

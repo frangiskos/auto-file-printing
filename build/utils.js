@@ -26,7 +26,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.testAllEncodings = exports.doCleanup = exports.print = exports.convertFilesToUtf8 = exports.moveFilesToQueue = exports.getFilesForPrinting = exports.checkIfPrinterIsValid = exports.checkIfFileExtensionsAreValid = exports.checkPathAccess = exports.waitAsync = void 0;
+exports.fileTextCleanup = exports.testAllEncodings = exports.doCleanup = exports.print = exports.convertFilesToUtf8 = exports.moveFilesToQueue = exports.getFilesForPrinting = exports.checkIfPrinterIsValid = exports.checkIfFileExtensionsAreValid = exports.checkPathAccess = exports.waitAsync = void 0;
 const chalk_1 = __importDefault(require("chalk"));
 const fs = __importStar(require("fs-extra"));
 const iconv_1 = require("iconv");
@@ -142,10 +142,13 @@ function convertFilesToUtf8(files) {
             }
             const iconv = new iconv_1.Iconv(config_1.settings.App.SourceFileEncoding, 'UTF-8');
             const convertedBuffer = iconv.convert(txtBuffer);
-            fs.writeFileSync(path_1.default.join(config_1.settings.App.PrintFolder, 'queue', `utf8_` + file.inQueue), 
-            // convertedBuffer,
-            '\ufeff' + convertedBuffer, // \ufeff is the BOM
-            { encoding: 'utf8' });
+            // '\ufeff' + convertedBuffer, // \ufeff is the BOM
+            const convertedText = convertedBuffer.toString('utf8');
+            const convertedFilename = path_1.default.join(config_1.settings.App.PrintFolder, 'queue', `utf8_` + file.inQueue);
+            const cleanedFile = fileTextCleanup(convertedText);
+            fs.writeFileSync(convertedFilename, cleanedFile, {
+                encoding: 'utf8',
+            });
             filesProcessed.push({
                 original: file.original,
                 inQueue: file.inQueue,
@@ -234,7 +237,8 @@ async function testAllEncodings(testFilePath, expected, { logUnsupportedEncoding
                     '_' +
                     encoding +
                     testFilePath.slice(testFilePath.lastIndexOf('.'));
-                fs.writeFileSync(convertedFilename, converted);
+                const cleanedFile = fileTextCleanup(converted);
+                fs.writeFileSync(convertedFilename, cleanedFile);
             }
             else {
                 if (logNonMatchingEncodings) {
@@ -256,3 +260,20 @@ async function testAllEncodings(testFilePath, expected, { logUnsupportedEncoding
     }
 }
 exports.testAllEncodings = testAllEncodings;
+function fileTextCleanup(text) {
+    let lines = text.split('\n');
+    // Remove escape characters
+    lines = lines.map((line) => config_1.settings.App.RemoveEscapeCharacters
+        ? line.replace(/\\r\\f/g, '')
+        : line.replace(/\\r/g, ''));
+    if (config_1.settings.App.RemoveEndingSpaces) {
+        lines = lines.map((line) => line.trimEnd());
+    }
+    if (config_1.settings.App.RemoveEndingNewLines) {
+        while (lines[lines.length - 1] === '' && lines.length > 1) {
+            lines.pop();
+        }
+    }
+    return lines.join('\r\n');
+}
+exports.fileTextCleanup = fileTextCleanup;

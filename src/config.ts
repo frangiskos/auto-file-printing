@@ -34,6 +34,9 @@ const settingsSchema = z.object({
         PauseBetweenChecks: z.number(),
         PauseBetweenPrints: z.number(),
         ShowAvailablePrintersOnStartup: z.boolean(),
+        RemoveEndingSpaces: z.boolean(),
+        RemoveEndingNewLines: z.boolean(),
+        RemoveEscapeCharacters: z.boolean(),
     }),
     FindEncoding: z.object({
         RunFindEncodingProcess: z.boolean(),
@@ -55,8 +58,7 @@ const settingsSample: SettingsValue = {
             '-executionpolicy',
             'bypass',
             '-Command',
-            'Start-Process -NoNewWindow -FilePath "%FILE_PATH%" -Verb print -Wait "%PRINTER_NAME%"', // This works but it opens a new window & -NoNewWindow sometimes causes problems.
-            // `Start-Process -FilePath "${filePath}" -Verb print -Wait "${printerName}"` //  This works but the fonts are very small and it doesn't support all file types.
+            'Start-Process -WindowStyle Minimized -FilePath "\'"%FILE_PATH%"\'" -Verb print -Wait "\'"%PRINTER_NAME%"\'"',
         ],
         PrinterName: 'Enter printer name here',
         ConvertFiles: true,
@@ -66,6 +68,9 @@ const settingsSample: SettingsValue = {
         PauseBetweenChecks: 1000,
         PauseBetweenPrints: 2000,
         ShowAvailablePrintersOnStartup: false,
+        RemoveEndingSpaces: true,
+        RemoveEndingNewLines: true,
+        RemoveEscapeCharacters: true,
     },
     FindEncoding: {
         RunFindEncodingProcess: false,

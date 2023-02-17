@@ -171,16 +171,19 @@ export function convertFilesToUtf8(
 
             const iconv = new Iconv(settings.App.SourceFileEncoding, 'UTF-8');
             const convertedBuffer = iconv.convert(txtBuffer);
-            fs.writeFileSync(
-                path.join(
-                    settings.App.PrintFolder,
-                    'queue',
-                    `utf8_` + file.inQueue,
-                ),
-                // convertedBuffer,
-                '\ufeff' + convertedBuffer, // \ufeff is the BOM
-                { encoding: 'utf8' },
+            // '\ufeff' + convertedBuffer, // \ufeff is the BOM
+            const convertedText = convertedBuffer.toString('utf8');
+
+            const convertedFilename = path.join(
+                settings.App.PrintFolder,
+                'queue',
+                `utf8_` + file.inQueue,
             );
+            const cleanedFile = fileTextCleanup(convertedText);
+            fs.writeFileSync(convertedFilename, cleanedFile, {
+                encoding: 'utf8',
+            });
+
             filesProcessed.push({
                 original: file.original,
                 inQueue: file.inQueue,
@@ -334,7 +337,8 @@ export async function testAllEncodings(
                     '_' +
                     encoding +
                     testFilePath.slice(testFilePath.lastIndexOf('.'));
-                fs.writeFileSync(convertedFilename, converted);
+                const cleanedFile = fileTextCleanup(converted);
+                fs.writeFileSync(convertedFilename, cleanedFile);
             } else {
                 if (logNonMatchingEncodings) {
                     log(chalk.yellow(encoding));
@@ -354,4 +358,26 @@ export async function testAllEncodings(
             matchingEncodings.join(', '),
         );
     }
+}
+
+export function fileTextCleanup(text: string) {
+    let lines = text.split('\n');
+
+    // Remove escape characters
+    lines = lines.map((line) =>
+        settings.App.RemoveEscapeCharacters
+            ? line.replace(/\\r\\f/g, '')
+            : line.replace(/\\r/g, ''),
+    );
+
+    if (settings.App.RemoveEndingSpaces) {
+        lines = lines.map((line) => line.trimEnd());
+    }
+    if (settings.App.RemoveEndingNewLines) {
+        while (lines[lines.length - 1] === '' && lines.length > 1) {
+            lines.pop();
+        }
+    }
+
+    return lines.join('\r\n');
 }
