@@ -16,12 +16,12 @@ import {
 
 async function main() {
     try {
-        // Demo version. Add expiration date after 30 days
-        const demoExpirationDate = new Date('2023-03-31T01:00:00');
-        const currentDate = new Date();
-        if (currentDate.getTime() > demoExpirationDate.getTime()) {
-            exit(`Demo version expired. Please contact the developer`);
-        }
+        // // Demo version. Add expiration date after 30 days
+        // const demoExpirationDate = new Date('2023-03-31T01:00:00');
+        // const currentDate = new Date();
+        // if (currentDate.getTime() > demoExpirationDate.getTime()) {
+        //     exit(`Demo version expired. Please contact the developer`);
+        // }
 
         // check if we need to run the encoding test
         if (settings.FindEncoding.RunFindEncodingProcess) {
