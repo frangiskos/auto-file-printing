@@ -32,12 +32,12 @@ const config_1 = require("./config");
 const utils_1 = require("./utils");
 async function main() {
     try {
-        // Demo version. Add expiration date after 30 days
-        const demoExpirationDate = new Date('2023-03-31T01:00:00');
-        const currentDate = new Date();
-        if (currentDate.getTime() > demoExpirationDate.getTime()) {
-            (0, config_1.exit)(`Demo version expired. Please contact the developer`);
-        }
+        // // Demo version. Add expiration date after 30 days
+        // const demoExpirationDate = new Date('2023-03-31T01:00:00');
+        // const currentDate = new Date();
+        // if (currentDate.getTime() > demoExpirationDate.getTime()) {
+        //     exit(`Demo version expired. Please contact the developer`);
+        // }
         // check if we need to run the encoding test
         if (config_1.settings.FindEncoding.RunFindEncodingProcess) {
             (0, utils_1.testAllEncodings)(config_1.settings.FindEncoding.TestFile, config_1.settings.FindEncoding.ExpectedCorrectText);
